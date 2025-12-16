@@ -320,6 +320,10 @@
                 Não sabe o login? Fale conosco
             </a>
         </div>
+        
+        <div style="margin-top: 20px; text-align: center; font-size: 0.9em; color: #7f8c8d;">
+            <p>Os logins de vendedores são definidos pelo administrador (Sadzin) no código-fonte.</p>
+        </div>
     </div>
 
     <div id="geradorArea" class="container" style="display: none;">
@@ -343,8 +347,8 @@
                 </div>
                 
                 <div class="key-controls">
-                    <button type="button" class="btn-secondary" onclick="generateRandomKeyToInput('sadzinmods')">sadzinmods + 9 Nº</button>
-                    <button type="button" class="btn-secondary" onclick="generateRandomKeyToInput('sadzin')">sadzin + 9 Nº</button>
+                    <button type="button" class="btn-secondary" onclick="generateRandomKeyToInput('sadzinmods', 9)">sadzinmods + 9 Nº</button>
+                    <button type="button" class="btn-secondary" onclick="generateRandomKeyToInput('sadzin', 9)">sadzin + 9 Nº</button>
                 </div>
 
                 <label for="keyDays">Quantos dias:</label>
@@ -386,7 +390,7 @@
             <div id="creditManagementList">
                 </div>
             
-            <h4>Criar Novo Usuário de Login</h4>
+            <h4>Criar Novo Usuário de Login (Apenas Local)</h4>
             <form id="createUserForm">
                 <label for="newUsername">Novo Usuário:</label>
                 <input type="text" id="newUsername" required>
@@ -396,6 +400,9 @@
                 
                 <button type="submit">CRIAR CREDENCIAL</button>
                 <div id="createUserMessage" class="key-message"></div>
+                <p style="font-size: 0.8em; color: #e74c3c; margin-top: 10px;">
+                    * Este novo usuário SÓ poderá logar neste dispositivo (celular/PC).
+                </p>
             </form>
             
             <h4>Gerenciar Credenciais</h4>
@@ -420,34 +427,51 @@
     </div>
 
     <script>
-        // *** NOVO VALOR DA SENHA ADM ***
+        // *** 1. USUÁRIOS PADRÃO E SENHA ADM ***
+        // Para que seu amigo consiga acessar, ele PRECISA estar nesta lista.
+        // Se você criar um usuário no Painel ADM, ele SÓ funcionará no seu celular.
         const ADM_PASS = '0904'; 
         
+        const INITIAL_CREDENTIALS = [
+            { user: 'sadzin', pass: 'mods', credits: 9999 }, // Seu login principal
+            { user: 'JP', pass: '12', credits: 2000 }      // Login do seu amigo (agora funciona para ele)
+            // Adicione novos vendedores/usuários globais aqui, com a senha e créditos iniciais.
+            // Ex: { user: 'vendedor2', pass: '12345', credits: 500 }
+        ];
+
         // Custo das chaves em Créditos
         const COST_MAP = {
             '1': 5, '3': 10, '7': 15, '15': 20, '30': 40
         };
 
         let currentUser = null; 
-        
-        function initializeUserCredentials() {
-            let credentials = JSON.parse(localStorage.getItem('user_credentials'));
+
+        // --- 2. FUNÇÃO DE INICIALIZAÇÃO DE DADOS ---
+        // Se o localStorage estiver vazio (primeira visita de qualquer pessoa), ele carrega os dados Padrão.
+        function initializeData(key, initialData) {
+            let data = JSON.parse(localStorage.getItem(key));
             
-            if (!credentials || credentials.length === 0) {
-                // Usuário padrão de emergência
-                credentials = [{ user: 'sadzin', pass: 'mods', credits: 9999 }];
-            } else {
-                credentials = credentials.map(cred => ({
+            if (key === 'user_credentials') {
+                 // Sempre garante que a credencial inicial esteja presente, se não houver nenhuma
+                if (!data || data.length === 0) {
+                    data = initialData;
+                    localStorage.setItem(key, JSON.stringify(data));
+                }
+                // Garante que o campo "credits" existe
+                return data.map(cred => ({
                     ...cred,
                     credits: cred.credits === undefined ? 0 : cred.credits 
                 }));
             }
-            return credentials;
+            
+            // Para Keys e Logs, se não houver nada, retorna a lista vazia.
+            return data || initialData;
         }
 
-        let userCredentials = initializeUserCredentials();
-        let accessLog = JSON.parse(localStorage.getItem('adm_access_log')) || [];
-        let generatedKeys = JSON.parse(localStorage.getItem('sadzin_keys')) || [];
+        let userCredentials = []; 
+        let accessLog = [];
+        let generatedKeys = [];
+
 
         // --- Elementos do DOM ---
         const loginArea = document.getElementById('loginArea');
@@ -473,6 +497,11 @@
         function saveKeys() {
             localStorage.setItem('sadzin_keys', JSON.stringify(generatedKeys));
         }
+        
+        function saveAccessLog() {
+            localStorage.setItem('adm_access_log', JSON.stringify(accessLog));
+        }
+
 
         // --- FUNÇÕES DE UTENSÍLIOS ---
 
@@ -563,11 +592,11 @@
         }
         window.closeAdmPanel = closeAdmPanel;
 
-        // --- RASTREAMENTO DE ACESSOS (CORRIGIDO: O log é de acesso ao Gerador) ---
+        // --- RASTREAMENTO DE ACESSOS ---
         function logAccess(status) {
             const logEntry = { status: status, time: getFormattedTime() };
             accessLog.unshift(logEntry); 
-            localStorage.setItem('adm_access_log', JSON.stringify(accessLog));
+            saveAccessLog();
         }
         
         function renderAccessLog() {
@@ -584,7 +613,7 @@
             });
         }
         
-        // --- GERENCIAMENTO DE CRÉDITOS (CORRIGIDO: Renderização do Salvar) ---
+        // --- GERENCIAMENTO DE CRÉDITOS ---
         
         function renderCreditManagement() {
             creditManagementList.innerHTML = '';
@@ -630,7 +659,7 @@
         window.updateUserCredits = updateUserCredits;
 
 
-        // --- LÓGICA DE GERENCIAMENTO DE CREDENCIAIS (CORRIGIDO: Renderização do Deletar) ---
+        // --- LÓGICA DE GERENCIAMENTO DE CREDENCIAIS (SÓ LOCAL) ---
         
         document.getElementById('createUserForm').addEventListener('submit', function(event) {
             event.preventDefault();
@@ -674,7 +703,7 @@
         }
 
         function deleteCredential(index) {
-            if (userCredentials.length === 1) {
+            if (userCredentials.length <= 1) {
                 alert("Erro: Você não pode deletar o único usuário existente.");
                 return;
             }
@@ -708,7 +737,12 @@
 
                 clearKeyOutput(); 
                 
-                generatedKeys = JSON.parse(localStorage.getItem('sadzin_keys')) || [];
+                // Recarrega todos os dados do localStorage do dispositivo atual
+                loadDataFromLocalStorage();
+
+                // Garante que o usuário logado reflita os dados atualizados
+                currentUser = userCredentials.find(cred => cred.user === username && cred.pass === password);
+
                 renderKeys();
                 updateCreditsDisplay(); 
                 
@@ -742,9 +776,9 @@
         }
         window.logout = logout; 
 
-        // --- LÓGICA DE GERAÇÃO E AÇÕES DE CHAVE (Mantidas e Funcionais) ---
+        // --- 3. LÓGICA DE GERAÇÃO E AÇÕES DE CHAVE (Ajuste para 9 dígitos) ---
         
-        function generateRandomNumber(length = 9) {
+        function generateRandomNumber(length = 9) { // Padrão agora é 9
             let result = '';
             const characters = '0123456789';
             for (let i = 0; i < length; i++) {
@@ -753,12 +787,12 @@
             return result;
         }
         
-        function generateRandomKeyWithPrefix(prefix) {
-            return prefix + generateRandomNumber(9); 
+        function generateRandomKeyWithPrefix(prefix, length = 9) {
+            return prefix + generateRandomNumber(length); 
         }
 
-        function generateRandomKeyToInput(prefix) {
-            keyKeyInput.value = generateRandomKeyWithPrefix(prefix);
+        function generateRandomKeyToInput(prefix, length) {
+            keyKeyInput.value = generateRandomKeyWithPrefix(prefix, length);
         }
         window.generateRandomKeyToInput = generateRandomKeyToInput; 
         
@@ -940,14 +974,24 @@
             keyKeyInput.value = '';
         });
 
-        function loadKeys() {
-            generatedKeys = JSON.parse(localStorage.getItem('sadzin_keys')) || [];
+        function loadDataFromLocalStorage() {
+            userCredentials = initializeData('user_credentials', INITIAL_CREDENTIALS);
+            accessLog = initializeData('adm_access_log', []);
+            generatedKeys = initializeData('sadzin_keys', []);
+            
             if (geradorArea.style.display === 'block') {
                 renderKeys();
+                // Tenta atualizar o currentUser caso a página tenha sido recarregada
+                if (currentUser) {
+                    currentUser = userCredentials.find(cred => cred.user === currentUser.user);
+                    if (currentUser) {
+                        updateCreditsDisplay();
+                    }
+                }
             }
         }
         // Inicialização
-        document.addEventListener('DOMContentLoaded', loadKeys);
+        document.addEventListener('DOMContentLoaded', loadDataFromLocalStorage);
         document.addEventListener('DOMContentLoaded', clearKeyOutput);
     </script>
 </body>

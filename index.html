@@ -113,13 +113,14 @@
         .key-controls {
             display: flex;
             justify-content: space-between;
+            flex-wrap: wrap; /* Permite quebrar linha em telas menores */
             margin-bottom: 15px;
         }
         .key-controls button {
             flex-grow: 1;
             padding: 8px 12px;
             font-size: 14px;
-            margin: 0 5px;
+            margin: 5px; /* Adicionado margem para espaçar os botões */
         }
         
         /* --- LISTA DE KEYS --- */
@@ -347,6 +348,7 @@
                 </div>
                 
                 <div class="key-controls">
+                    <button type="button" class="btn-secondary" onclick="generateRandomKeyToInput('', 9)">9 NÚMEROS ALEATÓRIOS</button>
                     <button type="button" class="btn-secondary" onclick="generateRandomKeyToInput('sadzinmods', 9)">sadzinmods + 9 Nº</button>
                     <button type="button" class="btn-secondary" onclick="generateRandomKeyToInput('sadzin', 9)">sadzin + 9 Nº</button>
                 </div>
@@ -428,15 +430,12 @@
 
     <script>
         // *** 1. USUÁRIOS PADRÃO E SENHA ADM ***
-        // Para que seu amigo consiga acessar, ele PRECISA estar nesta lista.
-        // Se você criar um usuário no Painel ADM, ele SÓ funcionará no seu celular.
         const ADM_PASS = '0904'; 
         
         const INITIAL_CREDENTIALS = [
             { user: 'sadzin', pass: 'mods', credits: 9999 }, // Seu login principal
-            { user: 'JP', pass: '12', credits: 2000 }      // Login do seu amigo (agora funciona para ele)
-            // Adicione novos vendedores/usuários globais aqui, com a senha e créditos iniciais.
-            // Ex: { user: 'vendedor2', pass: '12345', credits: 500 }
+            { user: 'JP', pass: '12', credits: 10 }      // <-- Créditos alterados para 10
+            // Adicione novos vendedores/usuários globais aqui.
         ];
 
         // Custo das chaves em Créditos
@@ -447,24 +446,20 @@
         let currentUser = null; 
 
         // --- 2. FUNÇÃO DE INICIALIZAÇÃO DE DADOS ---
-        // Se o localStorage estiver vazio (primeira visita de qualquer pessoa), ele carrega os dados Padrão.
         function initializeData(key, initialData) {
             let data = JSON.parse(localStorage.getItem(key));
             
             if (key === 'user_credentials') {
-                 // Sempre garante que a credencial inicial esteja presente, se não houver nenhuma
                 if (!data || data.length === 0) {
                     data = initialData;
                     localStorage.setItem(key, JSON.stringify(data));
                 }
-                // Garante que o campo "credits" existe
                 return data.map(cred => ({
                     ...cred,
                     credits: cred.credits === undefined ? 0 : cred.credits 
                 }));
             }
             
-            // Para Keys e Logs, se não houver nada, retorna a lista vazia.
             return data || initialData;
         }
 
@@ -737,10 +732,8 @@
 
                 clearKeyOutput(); 
                 
-                // Recarrega todos os dados do localStorage do dispositivo atual
                 loadDataFromLocalStorage();
 
-                // Garante que o usuário logado reflita os dados atualizados
                 currentUser = userCredentials.find(cred => cred.user === username && cred.pass === password);
 
                 renderKeys();
@@ -776,9 +769,9 @@
         }
         window.logout = logout; 
 
-        // --- 3. LÓGICA DE GERAÇÃO E AÇÕES DE CHAVE (Ajuste para 9 dígitos) ---
+        // --- 3. LÓGICA DE GERAÇÃO E AÇÕES DE CHAVE ---
         
-        function generateRandomNumber(length = 9) { // Padrão agora é 9
+        function generateRandomNumber(length = 9) { 
             let result = '';
             const characters = '0123456789';
             for (let i = 0; i < length; i++) {
@@ -981,7 +974,6 @@
             
             if (geradorArea.style.display === 'block') {
                 renderKeys();
-                // Tenta atualizar o currentUser caso a página tenha sido recarregada
                 if (currentUser) {
                     currentUser = userCredentials.find(cred => cred.user === currentUser.user);
                     if (currentUser) {

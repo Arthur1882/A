@@ -108,19 +108,23 @@
         }
 
         /* --- CONTROLES DE KEY --- */
-        .btn-secondary { background-color: #3498db; }
+        .btn-secondary { 
+            background-color: #3498db; 
+            width: 100%; /* Faz o botão único ocupar o espaço todo */
+            margin: 0;
+        }
         .btn-secondary:hover { background-color: #2980b9; }
         .key-controls {
             display: flex;
             justify-content: space-between;
-            flex-wrap: wrap; /* Permite quebrar linha em telas menores */
+            flex-wrap: wrap; 
             margin-bottom: 15px;
         }
         .key-controls button {
             flex-grow: 1;
             padding: 8px 12px;
             font-size: 14px;
-            margin: 5px; /* Adicionado margem para espaçar os botões */
+            margin: 5px 0; 
         }
         
         /* --- LISTA DE KEYS --- */
@@ -349,8 +353,6 @@
                 
                 <div class="key-controls">
                     <button type="button" class="btn-secondary" onclick="generateRandomKeyToInput('', 9)">9 NÚMEROS ALEATÓRIOS</button>
-                    <button type="button" class="btn-secondary" onclick="generateRandomKeyToInput('sadzinmods', 9)">sadzinmods + 9 Nº</button>
-                    <button type="button" class="btn-secondary" onclick="generateRandomKeyToInput('sadzin', 9)">sadzin + 9 Nº</button>
                 </div>
 
                 <label for="keyDays">Quantos dias:</label>
@@ -434,7 +436,7 @@
         
         const INITIAL_CREDENTIALS = [
             { user: 'sadzin', pass: 'mods', credits: 9999 }, // Seu login principal
-            { user: 'JP', pass: '12', credits: 10 }      // <-- Créditos alterados para 10
+            { user: 'JP', pass: '12', credits: 10 }      // Créditos do JP ajustados para 10
             // Adicione novos vendedores/usuários globais aqui.
         ];
 
@@ -734,7 +736,7 @@
                 
                 loadDataFromLocalStorage();
 
-                currentUser = userCredentials.find(cred => cred.user === username && cred.pass === password);
+                currentUser = userCredentials.find(cred => cred.user === currentUser.user);
 
                 renderKeys();
                 updateCreditsDisplay(); 
@@ -781,6 +783,7 @@
         }
         
         function generateRandomKeyWithPrefix(prefix, length = 9) {
+            // Se o prefixo for vazio (''), retorna apenas o número (o que é o caso agora)
             return prefix + generateRandomNumber(length); 
         }
 

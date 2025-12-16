@@ -326,10 +326,7 @@
             </a>
         </div>
         
-        <div style="margin-top: 20px; text-align: center; font-size: 0.9em; color: #7f8c8d;">
-            <p>Os logins de vendedores são definidos pelo administrador (Sadzin) no código-fonte.</p>
         </div>
-    </div>
 
     <div id="geradorArea" class="container" style="display: none;">
         
@@ -763,8 +760,6 @@
                 document.getElementById('password').value = '';
                 document.getElementById('loginMessage').textContent = '';
                 
-                clearKeyOutput(); 
-                
                 logAccess("Logout");
                 alert("Você saiu do sistema.");
             }
@@ -783,7 +778,6 @@
         }
         
         function generateRandomKeyWithPrefix(prefix, length = 9) {
-            // Se o prefixo for vazio (''), retorna apenas o número (o que é o caso agora)
             return prefix + generateRandomNumber(length); 
         }
 

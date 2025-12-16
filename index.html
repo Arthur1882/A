@@ -430,6 +430,7 @@
     <script>
         // *** 1. USUÁRIOS PADRÃO E SENHA ADM ***
         const ADM_PASS = '0904'; 
+        const ADMIN_USER = 'sadzin'; // Usuário com permissão total sobre keys
         
         const INITIAL_CREDENTIALS = [
             { user: 'sadzin', pass: 'mods', credits: 9999 }, // Seu login principal
@@ -814,6 +815,12 @@
         window.copyKey = copyKey; 
 
         function editKey(index) {
+            // Checagem ADM
+            if (!currentUser || currentUser.user !== ADMIN_USER) {
+                alert("ERRO: Apenas o administrador (sadzin) pode EDITAR keys.");
+                return;
+            }
+            
             const currentKey = generatedKeys[index];
             const newKeyValue = prompt(`Editar Key (atual: ${currentKey.key}):`, currentKey.key);
             if (newKeyValue === null) return; 
@@ -845,11 +852,33 @@
                 keysList.innerHTML = '<p style="text-align: center; color: #7f8c8d;">Nenhuma key gerada ainda.</p>';
                 return;
             }
+            
+            // Variável para checar se é o ADM
+            const isAdmin = currentUser && currentUser.user === ADMIN_USER;
+            
             generatedKeys.forEach((item, index) => {
                 const expiryString = formatExpiryDate(item.expiryDate);
                 const itemDiv = document.createElement('div');
                 itemDiv.className = 'key-item';
                 if (item.isFrozen) { itemDiv.classList.add('frozen'); }
+                
+                let adminButtons = '';
+                // Renderiza os botões de controle apenas se for o ADM
+                if (isAdmin) {
+                    adminButtons = `
+                        <button class="btn-editar" onclick="editKey(${index})">EDITAR KEY</button>
+                        <button class="btn-deletar" onclick="deleteKey(${index})">DELETAR KEY</button>
+                        <button class="btn-resetar" onclick="resetKey(${index})">RESETAR KEY</button>
+                    `;
+                }
+                
+                // O botão de CONGELAR é visível para todos os vendedores
+                const freezeButton = `
+                    <button class="btn-congelar" onclick="toggleFreezeKey(${index})">
+                        ${item.isFrozen ? 'DESCONGELAR' : 'CONGELAR KEY'}
+                    </button>
+                `;
+
                 itemDiv.innerHTML = `
                     <div class="key-info">
                         <strong>${item.key}</strong>
@@ -859,12 +888,8 @@
                         (Disp: ${item.devices})
                     </div>
                     <div class="key-actions">
-                        <button class="btn-editar" onclick="editKey(${index})">EDITAR KEY</button>
-                        <button class="btn-congelar" onclick="toggleFreezeKey(${index})">
-                            ${item.isFrozen ? 'DESCONGELAR' : 'CONGELAR KEY'}
-                        </button>
-                        <button class="btn-deletar" onclick="deleteKey(${index})">DELETAR KEY</button>
-                        <button class="btn-resetar" onclick="resetKey(${index})">RESETAR KEY</button>
+                        ${adminButtons}
+                        ${freezeButton}
                     </div>
                 `;
                 keysList.appendChild(itemDiv);
@@ -872,6 +897,7 @@
         }
         
         function toggleFreezeKey(index) {
+            // Esta função é acessível a todos
             generatedKeys[index].isFrozen = !generatedKeys[index].isFrozen;
             saveKeys();
             renderKeys();
@@ -879,6 +905,12 @@
         window.toggleFreezeKey = toggleFreezeKey;
 
         function deleteKey(index) {
+            // Checagem ADM
+            if (!currentUser || currentUser.user !== ADMIN_USER) {
+                alert("ERRO: Apenas o administrador (sadzin) pode DELETAR keys.");
+                return;
+            }
+            
             if (confirm(`Tem certeza que deseja DELETAR a key ${generatedKeys[index].key}?`)) {
                 generatedKeys.splice(index, 1); 
                 saveKeys();
@@ -888,6 +920,12 @@
         window.deleteKey = deleteKey;
 
         function resetKey(index) {
+            // Checagem ADM
+            if (!currentUser || currentUser.user !== ADMIN_USER) {
+                alert("ERRO: Apenas o administrador (sadzin) pode RESETAR keys.");
+                return;
+            }
+            
             if (confirm(`Tem certeza que deseja RESETAR a key ${generatedKeys[index].key}?`)) {
                 const days = generatedKeys[index].days;
                 generatedKeys[index].expiryDate = calculateExpiryDate(days);
